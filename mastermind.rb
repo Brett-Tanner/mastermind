@@ -1,4 +1,15 @@
-# game class
+# ask how many games they want to play, set that as the number of games to be played
+
+# keep score over each game    
+
+
+# 12 rows of 4 holes, with 4 smaller holes next to them
+
+
+    # 6 colors to be placed in the large holes TODO: Use numbers, not colors
+
+
+    # 4 smaller black and white pegs for the smaller holes
 
 class Game
     
@@ -7,55 +18,43 @@ class Game
     def initialize
         puts "Player 1, what's your name"
         player1_name = gets.chomp
+        puts "#{player1_name}, what's your role?"
+        player1_role = gets.chomp.downcase
         puts "Player 2, what's your name (Enter 'CPU' to play against the computer)"
-        player2_name = gets.chomp 
+        player2_name = gets.chomp
+        puts "#{player2_name}, what's your role?"
+        player2_role = gets.chomp.downcase
         
         if player2_name == "CPU"
-            @player1 = Human.new(player1_name)
-            @player2 = Computer.new
+            @player1 = Human.new(player1_name, player1_role)
+            @player2 = Computer.new(player2_role)
         else
-            @player1 = Human.new(player1_name)
-            @player2 = Human.new(player2_name)
+            @player1 = Human.new(player1_name, player1_role)
+            @player2 = Human.new(player2_name, player2_role)
         end
-        
-        p @player1
-        p @player2
 
-        puts "Best of ____?"
+        puts "Best of _?"
         @num_of_rounds = gets.chomp.to_i
-
-        p num_of_rounds
     end
 end
-
-    # ask how many games they want to play, set that as the number of games to be played
-
-    # keep score over each game    
-
-
-    # 12 rows of 4 holes, with 4 smaller holes next to them
-
-
-        # 6 colors to be placed in the large holes TODO: Use numbers, not colors
-
-
-        # 4 smaller black and white pegs for the smaller holes
-
-
-# human player class
 
 class Human
-    def initialize(name)
+    
+    attr_accessor :role, :name
+
+    def initialize(name, role)
         @name = name
+        @role = role
     end
 end
 
-
-# computer player sub-class
-
 class Computer
-    def initialize
-        @NAME = "CPU"
+    
+    attr_accessor :role, :name
+    
+    def initialize(role)
+        @name = "CPU"
+        @role = role
     end
 end
 
@@ -77,8 +76,5 @@ end
         # checks against codemaker's choice (black small peg for color and position correct, white peg is the right color in the wrong place)
 
         # guess until all rows are full
-
-
-
 
 Game.new
