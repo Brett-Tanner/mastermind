@@ -1,19 +1,12 @@
-# ask how many games they want to play, set that as the number of games to be played
-
-# keep score over each game    
-
-
-# 12 rows of 4 holes, with 4 smaller holes next to them
-
-
-    # 6 colors to be placed in the large holes TODO: Use numbers, not colors
-
-
-    # 4 smaller black and white pegs for the smaller holes
+# TODO: persist score between each game    
 
 class Game
-    
-    attr_accessor :player1, :player2, :num_of_rounds
+
+    @@BLANK_HINTS = ["o", "o", "o", "o", "|"]
+    @@BLANK_ROW = ["0", "0", "0", "0"]
+    @@board = []
+
+    attr_accessor :player1, :player2, :num_of_rounds, :board
     
     def initialize
         puts "Player 1, what's your name"
@@ -35,6 +28,21 @@ class Game
 
         puts "Best of _?"
         @num_of_rounds = gets.chomp.to_i
+        self.set_code
+    end
+
+    def set_code
+        
+        self.new_board
+    end
+
+    def new_board
+        12.times {@@board.push([@@BLANK_HINTS, @@BLANK_ROW])}
+        self.print_board
+    end
+
+    def print_board
+        @@board.each {|value| puts value.join("  ")}
     end
 end
 
@@ -77,4 +85,4 @@ end
 
         # guess until all rows are full
 
-Game.new
+test = Game.new
