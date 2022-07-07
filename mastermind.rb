@@ -1,54 +1,90 @@
-# TODO: persist score between each game    
+# TODO: persist score between each game, do stuff with number of rounds
 
 class Game
 
+    private
+
     @@BLANK_HINTS = ["o", "o", "o", "o", "|"]
     @@BLANK_ROW = ["0", "0", "0", "0"]
-    @@board = []
 
-    attr_accessor :player1, :player2, :num_of_rounds, :board
+    attr_accessor :player1, :player2, :num_of_rounds, :board, :players, :code
     
     def initialize
-        puts "Player 1, what's your name"
-        player1_name = gets.chomp
-        puts "#{player1_name}, what's your role?"
-        player1_role = gets.chomp.downcase
-        puts "Player 2, what's your name (Enter 'CPU' to play against the computer)"
-        player2_name = gets.chomp
-        puts "#{player2_name}, what's your role?"
-        player2_role = gets.chomp.downcase
+        player1_name = self.get_player_name(1)
+        player2_name = self.get_player_name(2)
         
-        if player2_name == "CPU"
-            @player1 = Human.new(player1_name, player1_role)
-            @player2 = Computer.new(player2_role)
-        else
-            @player1 = Human.new(player1_name, player1_role)
-            @player2 = Human.new(player2_name, player2_role)
+        player1_role = self.get_player_role(player1_name)
+        player2_role = self.get_player_role(player2_name)
+        if player1_role == player2_role
+            puts "***You can't have the same role***"
+            player1_role = self.get_player_role(player1_name)
+            player2_role = self.get_player_role(player2_name)
         end
+
+        @player1 = self.create_player(player1_name, player1_role)
+        @player2 = self.create_player(player2_name, player2_role)
+
+        @players = [@player1, @player2]
 
         puts "Best of _?"
         @num_of_rounds = gets.chomp.to_i
+        
+        # needs to be initilialized as an array so the clear in .new_board doesn't throw an error
+        @board = []
         self.set_code
     end
 
+    def get_player_name(player_num)
+        puts "Player #{player_num}, what's your name? Enter 'CPU' to create a computer player"
+        gets.chomp
+    end
+
+    def get_player_role(player_name)
+        puts "#{player_name}, what's your role? (CM or CB)"
+        gets.chomp.downcase
+    end
+
+    def create_player(player_name, player_role)
+        if player_role == "CPU"
+            Computer.new(player_role)
+        else
+            Human.new(player_name, player_role)
+        end
+    end
+
     def set_code
-        
+        @players.each do |player|
+            if player.role == "cm"
+                puts "#{player.name}, set your code"
+                @code = gets.chomp
+                if @code.length == 4
+                    @code = @code.to_i
+                else
+                    puts "***The code must be 4 digits***"
+                    self.set_code
+                    return
+                end
+            end
+        end
         self.new_board
     end
 
     def new_board
-        12.times {@@board.push([@@BLANK_HINTS, @@BLANK_ROW])}
+        @board.clear
+        12.times {@board.push([@@BLANK_HINTS, @@BLANK_ROW])}
         self.print_board
     end
 
     def print_board
-        @@board.each {|value| puts value.join("  ")}
+        @board.each {|value| puts value.join("  ")}
     end
 end
 
 class Human
     
     attr_accessor :role, :name
+
+    private
 
     def initialize(name, role)
         @name = name
@@ -60,6 +96,8 @@ class Computer
     
     attr_accessor :role, :name
     
+    private
+
     def initialize(role)
         @name = "CPU"
         @role = role
