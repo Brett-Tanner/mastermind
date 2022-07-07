@@ -1,13 +1,24 @@
 # TODO: persist score between each game, do stuff with number of rounds
 
+    # codemaker module
+
+        # chooses 4 colored pegs (if comp they're random)
+
+        # gains a point each time the codebreaker guesses incorrectly, plus one more if they run out of turns
+
+    # codebreaker module
+
+        # tries to guess order/color (by placing colored pegs in 4 large holes)
+
+        # checks against codemaker's choice (black small peg for color and position correct, white peg is the right color in the wrong place)
+
+        # guess until all rows are full
+
 class Game
 
     private
 
-    @@BLANK_HINTS = ["o", "o", "o", "o", "|"]
-    @@BLANK_ROW = ["0", "0", "0", "0"]
-
-    attr_accessor :player1, :player2, :num_of_rounds, :board, :players, :code
+    attr_accessor :player1, :player2, :num_of_rounds, :board, :players, :code, :guess_number
     
     def initialize
         player1_name = self.get_player_name(1)
@@ -31,6 +42,7 @@ class Game
         
         # needs to be initilialized as an array so the clear in .new_board doesn't throw an error
         @board = []
+        @guess_number = 0
         self.set_code
     end
 
@@ -58,7 +70,7 @@ class Game
                 puts "#{player.name}, set your code"
                 @code = gets.chomp
                 if @code.length == 4
-                    @code = @code.to_i
+                    @code = @code.split(//)
                 else
                     puts "***The code must be 4 digits***"
                     self.set_code
@@ -67,16 +79,58 @@ class Game
             end
         end
         self.new_board
+        if @player1.role == "cb"
+            self.make_guess(@player1)
+        else
+            self.make_guess(@player2)
+        end
     end
 
     def new_board
         @board.clear
-        12.times {@board.push([@@BLANK_HINTS, @@BLANK_ROW])}
+        12.times {@board.push(["o", "o", "o", "o", "|", "0", "0", "0", "0"])}
         self.print_board
     end
 
     def print_board
         @board.each {|value| puts value.join("  ")}
+    end
+
+    def make_guess(guessing_player)
+        puts "#{guessing_player.name}, what do you think the code is?"
+        guess = gets.chomp
+        if guess.length == 4
+            guess = guess.split(//)
+        else
+            puts "***The guess must be 4 digits***"
+            self.make_guess
+            return
+        end
+
+        if guess == @code
+            puts "Congratulations #{guessing_player.name}, you got it!"
+            return
+        end
+
+        @code.each_index do |column|
+            if @code[column] == guess[column]
+                puts "Digit #{column} is exactly right!"
+                @board[@guess_number][column] = "b"
+            elsif @code.any?(guess[column])
+                puts "Digit #{column} is right, but in the wrong place!"
+                @board[@guess_number][column] = "w"
+            else
+                puts "Digit #{column} isn't part of the code"
+            end
+            @board[@guess_number][column + 5] = guess[column]
+        end
+
+        self.print_board
+        puts "#{12 - @guess_number} guesses remaining"
+        @guess_number += 1
+        while @guess_number < 12
+            self.make_guess(guessing_player)
+        end
     end
 end
 
@@ -103,24 +157,5 @@ class Computer
         @role = role
     end
 end
-
-
-# can you include and exclude modules through a method????
-
-    # codemaker module
-
-        # chooses 4 colored pegs (if comp they're random)
-
-        # gains a point each time the codebreaker guesses incorrectly, plus one more if they run out of turns
-
-
-    # codebreaker module
-
-        # tries to guess order/color (by placing colored pegs in 4 large holes)
-
-
-        # checks against codemaker's choice (black small peg for color and position correct, white peg is the right color in the wrong place)
-
-        # guess until all rows are full
 
 test = Game.new
