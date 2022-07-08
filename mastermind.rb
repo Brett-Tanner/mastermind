@@ -119,9 +119,9 @@ class Game
 
         guess = guess.split(//)
 
-        if guess == @code #FIXME: this doesn't end the game
+        if guess == @code
             puts "Congratulations #{guessing_player.name}, you got it!"
-            return
+            exit(0)
         end
 
         @code.each_index do |column|
