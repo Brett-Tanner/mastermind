@@ -41,7 +41,7 @@ class Game
         @num_of_rounds = gets.chomp.to_i
         
         # needs to be initilialized as an array so the clear in .new_board doesn't throw an error
-        @board = []
+        @board = Array.new
         @guess_number = 0
         self.set_code
     end
@@ -69,20 +69,33 @@ class Game
             if player.role == "cm"
                 puts "#{player.name}, set your code"
                 @code = gets.chomp
-                if @code.length == 4
-                    @code = @code.split(//)
-                else
-                    puts "***The code must be 4 digits***"
+                unless self.is_valid?(@code)
                     self.set_code
-                    return
+                    return 
                 end
             end
         end
+
+        @code = @code.split(//)
+
         self.new_board
         if @player1.role == "cb"
             self.make_guess(@player1)
         else
             self.make_guess(@player2)
+        end
+    end
+
+    def is_valid?(input)
+        if input.length != 4
+            puts "***The code must be 4 digits***"
+            return false
+        end
+        if input.split(//).all? {|digit| digit.to_i > 0 && digit.to_i < 7}
+            true
+        else
+            puts "**Digits can only be between 0-6***"
+            false
         end
     end
 
@@ -99,15 +112,14 @@ class Game
     def make_guess(guessing_player)
         puts "#{guessing_player.name}, what do you think the code is?"
         guess = gets.chomp
-        if guess.length == 4
-            guess = guess.split(//)
-        else
-            puts "***The guess must be 4 digits***"
-            self.make_guess
+        unless self.is_valid?(guess)
+            self.make_guess(guessing_player)
             return
         end
 
-        if guess == @code
+        guess = guess.split(//)
+
+        if guess == @code #FIXME: this doesn't end the game
             puts "Congratulations #{guessing_player.name}, you got it!"
             return
         end
@@ -124,6 +136,8 @@ class Game
             end
             @board[@guess_number][column + 5] = guess[column]
         end
+
+        
 
         self.print_board
         puts "#{12 - @guess_number} guesses remaining"
