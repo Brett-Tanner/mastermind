@@ -1,24 +1,14 @@
-# TODO: persist score between each game, do stuff with number of rounds
+# TODO: persist score TODO: between each game TODO:, do stuff with number of rounds
 
     # codemaker module
 
-        # chooses 4 colored pegs (if comp they're random)
-
         # gains a point each time the codebreaker guesses incorrectly, plus one more if they run out of turns
-
-    # codebreaker module
-
-        # tries to guess order/color (by placing colored pegs in 4 large holes)
-
-        # checks against codemaker's choice (black small peg for color and position correct, white peg is the right color in the wrong place)
-
-        # guess until all rows are full
 
 class Game
 
     private
 
-    attr_accessor :player1, :player2, :num_of_rounds, :board, :players, :code, :guess_number
+    attr_accessor :player1, :player2, :num_of_games, :board, :players, :code, :guess_number
     
     def initialize
         player1_name = self.get_player_name(1)
@@ -37,8 +27,8 @@ class Game
 
         @players = [@player1, @player2]
 
-        puts "Best of _?"
-        @num_of_rounds = gets.chomp.to_i
+        puts "How many games will you play??"
+        @num_of_games = gets.chomp.to_i
         
         # needs to be initilialized as an array so the clear in .new_board doesn't throw an error
         @board = Array.new
@@ -116,13 +106,7 @@ class Game
             self.make_guess(guessing_player)
             return
         end
-
         guess = guess.split(//)
-
-        if guess == @code
-            puts "Congratulations #{guessing_player.name}, you got it!"
-            exit(0)
-        end
 
         @code.each_index do |column|
             if @code[column] == guess[column]
@@ -137,14 +121,40 @@ class Game
             @board[@guess_number][column + 5] = guess[column]
         end
 
-        
+        if guess == @code
+            puts "Congratulations #{guessing_player.name}, you got it!"
+            if @num_of_games > 1 # because you play one initially
+                self.reset_game
+                return
+            else
+                exit(0)
+            end
+        end
 
         self.print_board
+        
         puts "#{12 - @guess_number} guesses remaining"
         @guess_number += 1
         while @guess_number < 12
             self.make_guess(guessing_player)
         end
+    end
+
+    def reset_game 
+        @num_of_games -= 1
+        if @num_of_games == 1
+            puts "#{num_of_games} game remaining!"
+        else
+            puts "#{num_of_games} games remaining!"
+        end
+        # switch roles
+        old_p1 = @player1.role
+        old_p2 = @player2.role
+        @player1.role = old_p2
+        @player2.role = old_p1
+        @guess_number = 0
+        self.new_board
+        self.set_code
     end
 end
 
