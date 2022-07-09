@@ -1,8 +1,3 @@
-# TODO: persist score TODO: between each game TODO:
-    # codemaker module
-
-        # gains a point each time the codebreaker guesses incorrectly, plus one more if they run out of turns
-
 class Game
 
     private
@@ -54,25 +49,22 @@ class Game
     end
 
     def set_code
-        @players.each do |player|
-            if player.role == "cm"
-                puts "#{player.name}, set your code"
-                @code = gets.chomp
-                unless self.is_valid?(@code)
-                    self.set_code
-                    return 
-                end
-            end
+        puts "#{self.role?("cm").name}, set your code"
+        @code = gets.chomp
+        unless self.is_valid?(@code)
+            self.set_code
+            return 
         end
 
         @code = @code.split(//)
 
         self.new_board
-        if @player1.role == "cb"
-            self.make_guess(@player1)
-        else
-            self.make_guess(@player2)
-        end
+        self.make_guess(self.role?("cb"))
+    end
+
+    def role?(role)
+        temp = @players.select {|player| player.role == role}
+        temp[0]
     end
 
     def is_valid?(input)
@@ -122,10 +114,11 @@ class Game
 
         if guess == @code
             puts "Congratulations #{guessing_player.name}, you got it!"
+            self.announce_scores(self.role?("cm"))
             self.reset_game
             return
         else
-            # update score
+            self.role?("cm").score += 1
         end
 
         self.print_board
@@ -133,11 +126,17 @@ class Game
         @guess_number += 1
         if @guess_number > 11
             puts "Oh no, you're out of guesses! The code was #{@code.join}"
+            self.role?("cm").score += 1
+            self.announce_scores(self.role?("cm"))
             self.reset_game
         else
             puts "#{12 - @guess_number} guesses remaining"
             self.make_guess(guessing_player)
         end
+    end
+
+    def announce_scores(codemaster)
+        puts "The current score is #{codemaster.name}: #{codemaster.score} - #{self.role?("cb").name}: #{self.role?("cb").score}"
     end
 
     def reset_game 
