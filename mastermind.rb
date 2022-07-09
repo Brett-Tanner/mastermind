@@ -1,5 +1,4 @@
-# TODO: persist score TODO: between each game TODO:, do stuff with number of rounds
-
+# TODO: persist score TODO: between each game TODO:
     # codemaker module
 
         # gains a point each time the codebreaker guesses incorrectly, plus one more if they run out of turns
@@ -123,62 +122,69 @@ class Game
 
         if guess == @code
             puts "Congratulations #{guessing_player.name}, you got it!"
-            if @num_of_games > 1 # because you play one initially
-                self.reset_game
-                return
-            else
-                exit(0)
-            end
+            self.reset_game
+            return
+        else
+            # update score
         end
 
         self.print_board
         
-        puts "#{12 - @guess_number} guesses remaining"
         @guess_number += 1
-        while @guess_number < 12
+        if @guess_number > 11
+            puts "Oh no, you're out of guesses! The code was #{@code.join}"
+            self.reset_game
+        else
+            puts "#{12 - @guess_number} guesses remaining"
             self.make_guess(guessing_player)
         end
     end
 
     def reset_game 
-        @num_of_games -= 1
-        if @num_of_games == 1
-            puts "#{num_of_games} game remaining!"
+        if @num_of_games > 1 # because you play one initially
+            @num_of_games -= 1
+            if @num_of_games == 1
+                puts "#{num_of_games} game remaining!"
+            else
+                puts "#{num_of_games} games remaining!"
+            end
+            # switch roles
+            old_p1 = @player1.role
+            old_p2 = @player2.role
+            @player1.role = old_p2
+            @player2.role = old_p1
+            @guess_number = 0
+            self.new_board
+            self.set_code
         else
-            puts "#{num_of_games} games remaining!"
+            exit(0)
         end
-        # switch roles
-        old_p1 = @player1.role
-        old_p2 = @player2.role
-        @player1.role = old_p2
-        @player2.role = old_p1
-        @guess_number = 0
-        self.new_board
-        self.set_code
     end
 end
 
 class Human
     
-    attr_accessor :role, :name
+    attr_accessor :role, :name, :score
 
     private
 
     def initialize(name, role)
         @name = name
         @role = role
+        @score = 0
     end
 end
 
 class Computer
     
-    attr_accessor :role, :name
+    attr_accessor :role, :name, :score
     
     private
 
     def initialize(role)
         @name = "CPU"
         @role = role
+        @score = 0
     end
 end
 
