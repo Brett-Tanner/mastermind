@@ -101,6 +101,21 @@ class Game
         end
         guess = guess.split(//)
 
+        self.give_hint(guess)
+
+        if guess == @code
+            puts "Congratulations #{guessing_player.name}, you got it!"
+            self.announce_scores(self.role?("cm"))
+            self.reset_game
+            return
+        else
+            self.role?("cm").score += 1
+        end
+
+        self.end_round
+    end
+
+    def give_hint (guess)
         @code.each_index do |column|
             if @code[column] == guess[column]
                 puts "Digit #{column} is exactly right!"
@@ -113,18 +128,10 @@ class Game
             end
             @board[@guess_number][column + 5] = guess[column]
         end
+    end
 
-        if guess == @code
-            puts "Congratulations #{guessing_player.name}, you got it!"
-            self.announce_scores(self.role?("cm"))
-            self.reset_game
-            return
-        else
-            self.role?("cm").score += 1
-        end
-
+    def end_round
         self.print_board
-        
         @guess_number += 1
         if @guess_number > 11
             puts "Oh no, you're out of guesses! The code was #{@code.join}"
@@ -133,7 +140,7 @@ class Game
             self.reset_game
         else
             puts "#{12 - @guess_number} guesses remaining"
-            self.make_guess(guessing_player)
+            self.make_guess(self.role?("cb"))
         end
     end
 
