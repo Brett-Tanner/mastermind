@@ -193,13 +193,14 @@ end
 
 class Computer
     
-    attr_accessor :role, :name, :score, :guess_array
+    attr_accessor :role, :name, :score, :guess_array, :last_guess
     
     def computer_guess
         if @parent.guess_number == 0
+            @last_guess = %w[1 1 2 2]
             "1122"
         else
-            "1234"
+            self.eliminate_guesses
         end
     end
 
@@ -210,11 +211,30 @@ class Computer
         @role = role
         @score = 0
         if @role == "cb"
-            @guess_array = [] 
+            @guess_array = Array.new
             possible_digits = %w[1 2 3 4 5 6]
             possible_digits.permutation(4) {|permutation| @guess_array.push(permutation)}
             @parent = parent
         end
+    end
+
+    def eliminate_guesses
+        @guess_array = @guess_array.select {|guess| self.possible?(guess)}
+    end
+
+    def possible?(guess)
+        last_hint = @parent.board[@parent.guess_number - 1][0..3]
+        this_hint = Array.new(4)
+        guess.each_index do |column|
+            if guess[column] == @last_guess[column]
+                this_hint[column] = "b"
+            elsif guess.any?(@last_guess[column])
+                this_hint[column] = "w"
+            else
+                this_hint[column] = "o"
+            end
+        end
+        last_hint == this_hint
     end
 end
 
