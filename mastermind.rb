@@ -2,9 +2,11 @@
 
 class Game
 
+    attr_accessor :board, :guess_number
+
     private
 
-    attr_accessor :player1, :player2, :num_of_games, :board, :players, :code, :guess_number
+    attr_accessor :player1, :player2, :num_of_games, :players, :code
     
     def initialize
         player1_name = self.get_player_name(1)
@@ -34,7 +36,7 @@ class Game
 
     def get_player_name(player_num)
         puts "Player #{player_num}, what's your name? Enter 'CPU' to create a computer player"
-        gets.chomp
+        gets.chomp.upcase
     end
 
     def get_player_role(player_name)
@@ -43,8 +45,8 @@ class Game
     end
 
     def create_player(player_name, player_role)
-        if player_name == "cpu"
-            Computer.new(player_role)
+        if player_name == "CPU"
+            Computer.new(player_role, self)
         else
             Human.new(player_name, player_role)
         end
@@ -92,13 +94,19 @@ class Game
         @board.each {|value| puts value.join("  ")}
     end
 
+    #TODO: add computer guessing
     def make_guess(guessing_player)
-        puts "#{guessing_player.name}, what do you think the code is?"
-        guess = gets.chomp
-        unless self.is_valid?(guess)
-            self.make_guess(guessing_player)
-            return
+        if guessing_player.name == "CPU"
+            guess = guessing_player.computer_guess
+        else
+            puts "#{guessing_player.name}, what do you think the code is?"
+            guess = gets.chomp
+            unless self.is_valid?(guess)
+                self.make_guess(guessing_player)
+                return
+            end
         end
+        
         guess = guess.split(//)
 
         self.give_hint(guess)
@@ -187,9 +195,17 @@ class Computer
     
     attr_accessor :role, :name, :score, :guess_array
     
+    def computer_guess
+        if @parent.guess_number == 0
+            "1122"
+        else
+            "1234"
+        end
+    end
+
     private
 
-    def initialize(role)
+    def initialize(role, parent)
         @name = "CPU"
         @role = role
         @score = 0
@@ -197,11 +213,8 @@ class Computer
             @guess_array = [] 
             possible_digits = %w[1 2 3 4 5 6]
             possible_digits.permutation(4) {|permutation| @guess_array.push(permutation)}
+            @parent = parent
         end
-    end
-
-    def make_guess
-        
     end
 end
 
