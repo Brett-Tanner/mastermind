@@ -1,3 +1,5 @@
+# TODO: for the computer code, put it in the computer player class and call the exisiting game functions from there, so you have a reason to actually think about public and private functions. Maybe also move some of the exisiting functions into the human class if you think that makes sense after
+
 class Game
 
     private
@@ -41,7 +43,7 @@ class Game
     end
 
     def create_player(player_name, player_role)
-        if player_role == "CPU"
+        if player_name == "cpu"
             Computer.new(player_role)
         else
             Human.new(player_name, player_role)
@@ -176,7 +178,7 @@ end
 
 class Computer
     
-    attr_accessor :role, :name, :score
+    attr_accessor :role, :name, :score, :guess_array
     
     private
 
@@ -184,6 +186,15 @@ class Computer
         @name = "CPU"
         @role = role
         @score = 0
+        if @role == "cb"
+            @guess_array = [] 
+            possible_digits = %w[1 2 3 4 5 6]
+            possible_digits.permutation(4) {|permutation| @guess_array.push(permutation)}
+        end
+    end
+
+    def make_guess
+        
     end
 end
 
