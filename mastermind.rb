@@ -200,7 +200,10 @@ class Computer
             @last_guess = %w[1 1 2 2]
             "1122"
         else
-            self.eliminate_guesses
+            @valid_guesses = self.eliminate_guesses
+            current_guess = self.maximin
+            @last_guess = current_guess
+            current_guess
         end
     end
 
@@ -212,14 +215,15 @@ class Computer
         @score = 0
         if @role == "cb"
             @guess_array = Array.new
-            possible_digits = %w[1 2 3 4 5 6]
-            possible_digits.permutation(4) {|permutation| @guess_array.push(permutation)}
+            digits = %w[1 2 3 4 5 6]
+            digits.permutation(4) {|permutation| @guess_array.push(permutation)}
             @parent = parent
+            @valid_guesses = Array.new
         end
     end
 
     def eliminate_guesses
-        @guess_array = @guess_array.select {|guess| self.possible?(guess)}
+        @guess_array.select {|guess| self.possible?(guess)}
     end
 
     def possible?(guess)
@@ -235,6 +239,14 @@ class Computer
             end
         end
         last_hint == this_hint
+    end
+
+
+    # (node, depth, maximizing player - boolean) node: where we are in game - eliminated possibilities, last guess, score. Depth: how far ahead we look (1 guess 1 score so 2, depth is stopping condition when it reaches 0). CB is minimizing player, cm is maximizing player
+
+    # if node == 0 return minimum of maximum remaining possibilities (break ties with valid or invalid, then smallest number)
+    def maximin
+        
     end
 end
 
