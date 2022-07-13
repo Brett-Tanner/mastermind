@@ -193,7 +193,7 @@ end
 
 class Computer
     
-    attr_accessor :role, :name, :score, :guess_array, :last_guess
+    attr_accessor :role, :name, :score, :all_guesses, :last_guess
     
     def computer_guess
         if @parent.guess_number == 0
@@ -214,16 +214,22 @@ class Computer
         @role = role
         @score = 0
         if @role == "cb"
-            @guess_array = Array.new
+            # store all possible codes/guesses in an array
+            @all_guesses = Array.new
             digits = %w[1 2 3 4 5 6]
-            digits.permutation(4) {|permutation| @guess_array.push(permutation)}
-            @parent = parent
+            digits.permutation(4) {|permutation| @all_guesses.push(permutation)}
+            # store all possible scores for each guess/code combination in an array
+            @all_scores = Hash.new {|h, k| h[k] = {}}
+
+
+            # necessary later
             @valid_guesses = Array.new
+            @parent = parent
         end
     end
 
     def eliminate_guesses
-        @guess_array.select {|guess| self.possible?(guess)}
+        @all_guesses.select {|guess| self.possible?(guess)}
     end
 
     def possible?(guess)
