@@ -220,8 +220,9 @@ class Computer
             digits.permutation(4) {|permutation| @all_guesses.push(permutation)}
             # store all possible scores for each guess/code combination in an array
             @all_scores = Hash.new {|h, k| h[k] = {}}
-
-
+            @all_guesses.product(@all_guesses) do |guess, answer|
+                @all_scores[guess][answer] = self.get_hint(guess, answer)
+            end
             # necessary later
             @valid_guesses = Array.new
             @parent = parent
@@ -229,30 +230,39 @@ class Computer
     end
 
     def eliminate_guesses
-        @all_guesses.select {|guess| self.possible?(guess)}
+        @all_guesses.select {|guess| self.possible?(guess, @last_guess)}
     end
 
-    def possible?(guess)
+    def possible?(guess, maybe_code)
+        # check which guesses would have produced the same hint if the previous guess was the code
         last_hint = @parent.board[@parent.guess_number - 1][0..3]
-        this_hint = Array.new(4)
+        last_hint == self.get_hint(guess, maybe_code)
+    end
+
+    def get_hint(guess, maybe_code)
+        hint = Array.new(4)
         guess.each_index do |column|
-            if guess[column] == @last_guess[column]
-                this_hint[column] = "b"
-            elsif guess.any?(@last_guess[column])
-                this_hint[column] = "w"
+            if guess[column] == maybe_code[column]
+                hint[column] = "b"
+            elsif guess.any?(maybe_code[column])
+                hint[column] = "w"
             else
-                this_hint[column] = "o"
+                hint[column] = "o"
             end
         end
-        last_hint == this_hint
+        hint
     end
-
 
     # (node, depth, maximizing player - boolean) node: where we are in game - eliminated possibilities, last guess, score. Depth: how far ahead we look (1 guess 1 score so 2, depth is stopping condition when it reaches 0). CB is minimizing player, cm is maximizing player
 
     # if node == 0 return minimum of maximum remaining possibilities (break ties with valid or invalid, then smallest number)
     def maximin
+        # calculate how many guesses in valid_guesses would be eliminated by each possible hint from all possible guesses (including guesses which are now invalid)
         
+        # The score of a guess is the minimum number of guesses it will eliminate from valid_guesses. 
+        # Select as your guess the guess with the highest number of these, that is the guess which assuming a worst case scenario will eliminate the most valid possibilities.
+        # preferring guesses that are also valid guesses, then the lowest number
+        # return that value
     end
 end
 
