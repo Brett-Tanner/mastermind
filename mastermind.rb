@@ -1,4 +1,5 @@
-# TODO: for the computer code, put it in the computer player class and call the exisiting game functions from there, so you have a reason to actually think about public and private functions. Maybe also move some of the exisiting functions into the human class if you think that makes sense after
+# TODO: let the computer set the code
+# TODO: maybe move some methods into the human class
 
 class Game
 
@@ -94,7 +95,6 @@ class Game
         @board.each {|value| puts value.join("  ")}
     end
 
-    #TODO: add computer guessing
     def make_guess(guessing_player)
         if guessing_player.name == "CPU"
             guess = guessing_player.computer_guess
@@ -108,8 +108,6 @@ class Game
             guess = guess.split(//)
         end
         
-        
-
         self.give_hint(guess)
 
         if guess == @code
