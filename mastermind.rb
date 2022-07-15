@@ -105,9 +105,10 @@ class Game
                 self.make_guess(guessing_player)
                 return
             end
+            guess = guess.split(//)
         end
         
-        guess = guess.split(//)
+        
 
         self.give_hint(guess)
 
@@ -219,9 +220,9 @@ class Computer
             digits = %w[1 2 3 4 5 6]
             digits.permutation(4) {|permutation| @all_guesses.push(permutation)}
             # store all possible scores for each guess/code combination in an array
-            @all_scores = Hash.new {|h, k| h[k] = {}}
+            @all_hints = Hash.new {|h, k| h[k] = {}}
             @all_guesses.product(@all_guesses) do |guess, answer|
-                @all_scores[guess][answer] = self.get_hint(guess, answer)
+                @all_hints[guess][answer] = self.get_hint(guess, answer)
             end
             # necessary later
             @valid_guesses = Array.new
@@ -253,16 +254,39 @@ class Computer
         hint
     end
 
-    # (node, depth, maximizing player - boolean) node: where we are in game - eliminated possibilities, last guess, score. Depth: how far ahead we look (1 guess 1 score so 2, depth is stopping condition when it reaches 0). CB is minimizing player, cm is maximizing player
-
-    # if node == 0 return minimum of maximum remaining possibilities (break ties with valid or invalid, then smallest number)
     def maximin
-        # calculate how many guesses in valid_guesses would be eliminated by each possible hint from all possible guesses (including guesses which are now invalid)
-        
-        # The score of a guess is the minimum number of guesses it will eliminate from valid_guesses. 
-        # Select as your guess the guess with the highest number of these, that is the guess which assuming a worst case scenario will eliminate the most valid possibilities.
-        # preferring guesses that are also valid guesses, then the lowest number
-        # return that value
+        all_scores = Array.new
+        @all_hints.each do |potential_guess, code_hint_hash|
+            lowest_score = nil
+            code_hint_hash.each do |potential_code, hint_for_that_combo|
+                score = 0 
+                @valid_guesses.each do |valid_guess|
+                    if @all_hints[valid_guess][potential_guess] != hint_for_that_combo
+                        score += 1
+                    end
+                end
+                if lowest_score == nil || score < lowest_score
+                    lowest_score = score
+                end
+            end
+            all_scores.push([potential_guess, lowest_score])
+        end
+        # highest scores will be at the end of the array
+        all_scores.sort_by! {|element| element[1]}
+        # Reduce to just the tied highest scores
+        highest_score = all_scores[all_scores.length - 1][1]
+        maximin_scores = all_scores.select {|score_array| score_array[1] == highest_score}
+        if maximin_scores.any? {|score_array| @valid_guesses.include?(score_array[0])}
+            # If there are any that are valid guesses, eliminate all others
+            valid_scores = maximin_scores.select {|score_array| @valid_guesses.include?(score_array[0])}
+            # return the lowest valid guess
+            valid_scores.sort_by! {|element| element[0]}
+            valid_scores[0][0]
+        else
+            # return the lowest valid guess
+            maximin_scores.sort_by! {|element| element[0]}
+            maximin_scores[0][0]
+        end
     end
 end
 
