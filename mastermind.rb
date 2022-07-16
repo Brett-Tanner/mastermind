@@ -1,5 +1,6 @@
 # TODO: let the computer set the code
 # TODO: maybe move some methods into the human class
+# TODO: a lot of the attr_accessors probably don't need to exist because they're external accessors
 
 class Game
 
@@ -32,6 +33,7 @@ class Game
         # needs to be initilialized as an array so the clear in .new_board doesn't throw an error
         @board = Array.new
         @guess_number = 0
+        @code = ""
         self.set_code
     end
 
@@ -54,8 +56,14 @@ class Game
     end
 
     def set_code
-        puts "#{self.role?("cm").name}, set your code"
-        @code = gets.chomp
+        if self.role?("cm").name == "CPU"
+            new_code = ""
+            4.times {new_code.insert(0, "#{Random.rand(6) + 1}")}
+            @code = new_code
+        else
+            puts "#{self.role?("cm").name}, set your code"
+            @code = gets.chomp
+        end
         unless self.is_valid?(@code)
             self.set_code
             return 
@@ -125,13 +133,13 @@ class Game
     def give_hint (guess)
         @code.each_index do |column|
             if @code[column] == guess[column]
-                puts "Digit #{column} is exactly right!"
+                puts "Digit #{column + 1} is exactly right!"
                 @board[@guess_number][column] = "b"
             elsif @code.any?(guess[column])
-                puts "Digit #{column} is right, but in the wrong place!"
+                puts "Digit #{column + 1} is right, but in the wrong place!"
                 @board[@guess_number][column] = "w"
             else
-                puts "Digit #{column} isn't part of the code"
+                puts "Digit #{column + 1} isn't part of the code"
             end
             @board[@guess_number][column + 5] = guess[column]
         end
@@ -171,6 +179,8 @@ class Game
             @guess_number = 0
             self.new_board
             self.set_code
+            # TODO: call the computer's reset function to put it back to defaults
+
         else
             exit(0)
         end
@@ -192,14 +202,17 @@ end
 
 class Computer
     
-    attr_accessor :role, :name, :score, :all_guesses, :last_guess
+    attr_accessor :role, :name, :score
     
     def computer_guess
-        if @parent.guess_number == 0
+        if @parent.guess_number == 0 # FIXME: @parent becomes a nil for some reason on 2nd game?
             @last_guess = %w[1 1 2 2]
             "1122"
         else
-            @valid_guesses = self.eliminate_guesses
+            last_hint = @parent.board[@parent.guess_number - 1][0..3]
+            # select answers that are still possible, by seeing if they'd give the same code when the last guess is guessed against them
+            @possible_answers = @possible_answers.select {|possible_answer| @all_hints[@last_guess][possible_answer] == last_hint}
+            # make the current guess that which eliminates the most possible answers
             current_guess = self.maximin
             @last_guess = current_guess
             current_guess
@@ -207,6 +220,8 @@ class Computer
     end
 
     private
+
+    attr_accessor :all_guesses, :last_guess, :parent, :previous_guesses
 
     def initialize(role, parent)
         @name = "CPU"
@@ -217,25 +232,16 @@ class Computer
             @all_guesses = Array.new
             digits = %w[1 2 3 4 5 6]
             digits.permutation(4) {|permutation| @all_guesses.push(permutation)}
-            # store all possible scores for each guess/code combination in an array
+            # store all possible scores for each guess/code combination in a hash
             @all_hints = Hash.new {|h, k| h[k] = {}}
             @all_guesses.product(@all_guesses) do |guess, answer|
                 @all_hints[guess][answer] = self.get_hint(guess, answer)
             end
             # necessary later
-            @valid_guesses = Array.new
+            @possible_answers = @all_guesses.drop(0)
             @parent = parent
+            @previous_guesses = [%w[1 1 2 2]]
         end
-    end
-
-    def eliminate_guesses
-        @all_guesses.select {|guess| self.possible?(guess, @last_guess)}
-    end
-
-    def possible?(guess, maybe_code)
-        # check which guesses would have produced the same hint if the previous guess was the code
-        last_hint = @parent.board[@parent.guess_number - 1][0..3]
-        last_hint == self.get_hint(guess, maybe_code)
     end
 
     def get_hint(guess, maybe_code)
@@ -252,38 +258,45 @@ class Computer
         hint
     end
 
+    # FIXME: this definitely still needs some work
     def maximin
-        all_scores = Array.new
-        @all_hints.each do |potential_guess, code_hint_hash|
-            lowest_score = nil
-            code_hint_hash.each do |potential_code, hint_for_that_combo|
-                score = 0 
-                @valid_guesses.each do |valid_guess|
-                    if @all_hints[valid_guess][potential_guess] != hint_for_that_combo
-                        score += 1
-                    end
-                end
-                if lowest_score == nil || score < lowest_score
-                    lowest_score = score
-                end
-            end
-            all_scores.push([potential_guess, lowest_score])
+        guesses_by_score = Array.new
+        # eliminate invalid codes for increased speed
+        @all_hints.each do |guess, scores_by_code|
+            # retain only if the code is a possible answer
+            scores_by_code = scores_by_code.select {|potential_code, hint| @possible_answers.include?(potential_code)}
+            @all_hints[guess] = scores_by_code
+            # find out how many possible codes there are for each guess, you want the guess with the least possible codes
+            # FIXME: the score for literally everything is 4, that seems like an issue
+            # FIXME: yeah there's no way this is right, it just slowly moves the guesses up without really eliminating anything
+            score = guess.length
+            guesses_by_score.push([guess, score])
         end
         # highest scores will be at the end of the array
-        all_scores.sort_by! {|element| element[1]}
+        guesses_by_score.sort_by! {|guess_score| guess_score[1]} # TODO: you actively changed up to here
         # Reduce to just the tied highest scores
-        highest_score = all_scores[all_scores.length - 1][1]
-        maximin_scores = all_scores.select {|score_array| score_array[1] == highest_score}
-        if maximin_scores.any? {|score_array| @valid_guesses.include?(score_array[0])}
+        highest_score = guesses_by_score[guesses_by_score.length - 1][1]
+        maximin_scores = guesses_by_score.select {|score_array| score_array[1] == highest_score}
+        # eliminate previous guesses
+        maximin_scores = self.eliminate_previous(maximin_scores, @previous_guesses)
+        if maximin_scores.any? {|score_array| @possible_answers.include?(score_array[0])}
             # If there are any that are valid guesses, eliminate all others
-            valid_scores = maximin_scores.select {|score_array| @valid_guesses.include?(score_array[0])}
+            valid_scores = maximin_scores.select {|score_array| @possible_answers.include?(score_array[0])}
             # return the lowest valid guess
             valid_scores.sort_by! {|element| element[0]}
+            @previous_guesses.push(valid_scores[0][0])
             valid_scores[0][0]
         else
             # return the lowest valid guess
             maximin_scores.sort_by! {|element| element[0]}
+            @previous_guesses.push(maximin_scores[0][0])
             maximin_scores[0][0]
+        end
+    end
+
+    def eliminate_previous(array_to_check, previous_guesses)
+        a = array_to_check.select do |element|
+            !(@previous_guesses.include?(element[0]))
         end
     end
 end
