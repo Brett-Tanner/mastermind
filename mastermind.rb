@@ -44,7 +44,12 @@ class Game
 
     def get_player_role(player_name)
         puts "#{player_name}, what's your role? (CM or CB)"
-        gets.chomp.downcase
+        role = gets.chomp.downcase
+        unless role == "cm" || role == "cb"
+            puts "***Role must be CM or CB***"
+            role = self.get_player_role(player_name)
+        end
+        role
     end
 
     def create_player(player_name, player_role)
@@ -260,23 +265,35 @@ class Computer
 
     # FIXME: this definitely still needs some work
     def maximin
-        guesses_by_score = Array.new
-        # eliminate invalid codes for increased speed
+        guesses_by_min_score = Array.new
+        # eliminate invalid codes from hash for increased speed
         @all_hints.each do |guess, scores_by_code|
             # retain only if the code is a possible answer
             scores_by_code = scores_by_code.select {|potential_code, hint| @possible_answers.include?(potential_code)}
             @all_hints[guess] = scores_by_code
-            # find out how many possible codes there are for each guess, you want the guess with the least possible codes
-            # FIXME: the score for literally everything is 4, that seems like an issue
-            # FIXME: yeah there's no way this is right, it just slowly moves the guesses up without really eliminating anything
-            score = guess.length
-            guesses_by_score.push([guess, score])
+            # find out how many possible answers each possible hint for this guess would eliminate, store the hint which eliminates the least
+            # FIXME: all the scores are nil
+            lowest_score = nil
+            scores_by_code.each do |code, hint|
+                score = 0
+                @possible_answers.each do |answer|
+                    unless @all_hints[guess][answer] == hint
+                        score += 1
+                    end
+                end
+                puts "score is #{score}"
+                if lowest_score == nil || lowest_score < score
+                    lowest_score = score 
+                end
+            end
+            guesses_by_min_score.push([guess, lowest_score])
         end
         # highest scores will be at the end of the array
-        guesses_by_score.sort_by! {|guess_score| guess_score[1]} # TODO: you actively changed up to here
+        guesses_by_min_score.sort_by! {|guess_score| guess_score[1]}
+        p guesses_by_min_score
         # Reduce to just the tied highest scores
-        highest_score = guesses_by_score[guesses_by_score.length - 1][1]
-        maximin_scores = guesses_by_score.select {|score_array| score_array[1] == highest_score}
+        highest_score = guesses_by_min_score[guesses_by_min_score.length - 1][1]
+        maximin_scores = guesses_by_min_score.select {|score_array| score_array[1] == highest_score}
         # eliminate previous guesses
         maximin_scores = self.eliminate_previous(maximin_scores, @previous_guesses)
         if maximin_scores.any? {|score_array| @possible_answers.include?(score_array[0])}
