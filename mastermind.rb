@@ -1,6 +1,10 @@
+require 'pry'
+
 # TODO: let the computer set the code
 # TODO: maybe move some methods into the human class
 # TODO: a lot of the attr_accessors probably don't need to exist because they're external accessors
+
+# TODO: how do i input values when running pry?
 
 class Game
 
@@ -216,7 +220,19 @@ class Computer
         else
             last_hint = @parent.board[@parent.guess_number - 1][0..3]
             # select answers that are still possible, by seeing if they'd give the same code when the last guess is guessed against them
+
+
+            # FIXME: this completely empties the array
+            puts "empty before select in cpuguess #{@possible_answers.empty?}"
+
+            puts "hint should have been #{@all_hints[@last_guess][["4", "2", "3", "4"]]} it was #{last_hint}"
+
+            # FIXME: because this is not how you access the hint, it gives you nothing
+
             @possible_answers = @possible_answers.select {|possible_answer| @all_hints[@last_guess][possible_answer] == last_hint}
+
+            puts "empty after select in cpuguess #{@possible_answers.empty?}"
+
             # make the current guess that which eliminates the most possible answers
             current_guess = self.maximin
             @last_guess = current_guess
@@ -236,14 +252,14 @@ class Computer
             # store all possible codes/guesses in an array
             @all_guesses = Array.new
             digits = %w[1 2 3 4 5 6]
-            digits.permutation(4) {|permutation| @all_guesses.push(permutation)}
+            digits.repeated_permutation(4) {|permutation| @all_guesses.push(permutation)}
             # store all possible scores for each guess/code combination in a hash
             @all_hints = Hash.new {|h, k| h[k] = {}}
             @all_guesses.product(@all_guesses) do |guess, answer|
                 @all_hints[guess][answer] = self.get_hint(guess, answer)
             end
             # necessary later
-            @possible_answers = @all_guesses.drop(0)
+            @possible_answers = @all_guesses.map {|guess| guess.dup}
             @parent = parent
             @previous_guesses = [%w[1 1 2 2]]
         end
@@ -263,34 +279,40 @@ class Computer
         hint
     end
 
-    # FIXME: this definitely still needs some work
     def maximin
         guesses_by_min_score = Array.new
         # eliminate invalid codes from hash for increased speed
+        # FIXME: not sure if this is a problem cos it's already empty here
         @all_hints.each do |guess, scores_by_code|
             # retain only if the code is a possible answer
             scores_by_code = scores_by_code.select {|potential_code, hint| @possible_answers.include?(potential_code)}
             @all_hints[guess] = scores_by_code
-            # find out how many possible answers each possible hint for this guess would eliminate, store the hint which eliminates the least
-            # FIXME: all the scores are nil
+        end
+        # find out how many possible answers each possible hint for this guess would eliminate, store the worst case number eliminated
+        # FIXME: this might actually work fine now if I fix not selecting the proper valid guesses
+        @all_hints.each do |guess, scores_by_code|
             lowest_score = nil
             scores_by_code.each do |code, hint|
+                puts "2nd layer runs"
                 score = 0
                 @possible_answers.each do |answer|
                     unless @all_hints[guess][answer] == hint
+                        puts "final layer runs"
                         score += 1
+                        puts "guess is #{guess}, answer is #{answer} and hint is #{hint}"
+                        puts "score on this iteration is #{score}"
                     end
                 end
-                puts "score is #{score}"
+                puts "score after each is #{score}"
                 if lowest_score == nil || lowest_score < score
                     lowest_score = score 
+                    puts "lowest_score is #{lowest_score}"
                 end
             end
             guesses_by_min_score.push([guess, lowest_score])
         end
         # highest scores will be at the end of the array
         guesses_by_min_score.sort_by! {|guess_score| guess_score[1]}
-        p guesses_by_min_score
         # Reduce to just the tied highest scores
         highest_score = guesses_by_min_score[guesses_by_min_score.length - 1][1]
         maximin_scores = guesses_by_min_score.select {|score_array| score_array[1] == highest_score}
