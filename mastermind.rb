@@ -64,7 +64,7 @@ class Game
 
     def set_code
         if self.role?("cm").name == "CPU"
-            puts "Computer creates its code"
+            puts "The computer is creating its code"
             new_code = ""
             4.times {new_code.insert(0, "#{Random.rand(6) + 1}")}
             @code = new_code
@@ -79,6 +79,7 @@ class Game
 
         @code = @code.split(//)
 
+        sleep(2)
         self.new_board
         self.make_guess(self.role?("cb"))
     end
@@ -144,7 +145,7 @@ class Game
             if guess[column] == @code[column]
                 puts "#{guess[column]} is exactly right!"
                 @board[@guess_number][column] = "b"
-            elsif guess.any?(@code[column])
+            elsif @code.any?(guess[column])
                 puts "#{guess[column]} is right, but in the wrong place!"
                 @board[@guess_number][column] = "w"
             else
@@ -278,7 +279,7 @@ class Computer
         guess.each_index do |column|
             if guess[column] == maybe_code[column]
                 hint[column] = "b"
-            elsif guess.any?(maybe_code[column])
+            elsif maybe_code.any?(guess[column])
                 hint[column] = "w"
             else
                 hint[column] = "o"
