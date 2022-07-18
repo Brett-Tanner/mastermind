@@ -1,9 +1,3 @@
-require 'pry'
-
-# TODO: let the computer set the code
-# TODO: maybe move some methods into the human class
-# TODO: a lot of the attr_accessors probably don't need to exist because they're external accessors
-
 class Game
 
     attr_accessor :board, :guess_number
@@ -13,6 +7,12 @@ class Game
     attr_accessor :player1, :player2, :num_of_games, :players, :code
     
     def initialize
+        # create computer info to save time if 2 computer players
+        possibilities = Array.new
+        digits = %w[1 2 3 4 5 6]
+        digits.repeated_permutation(4) {|permutation| possibilities.push(permutation)}
+        @@POSSIBLE_CODES = possibilities.clone
+        
         player1_name = self.get_player_name(1)
         player2_name = self.get_player_name(2)
         
@@ -56,7 +56,7 @@ class Game
 
     def create_player(player_name, player_role)
         if player_name == "CPU"
-            Computer.new(player_role, self)
+            Computer.new(player_role, self, @@POSSIBLE_CODES)
         else
             Human.new(player_name, player_role)
         end
@@ -64,6 +64,7 @@ class Game
 
     def set_code
         if self.role?("cm").name == "CPU"
+            puts "Computer creates its code"
             new_code = ""
             4.times {new_code.insert(0, "#{Random.rand(6) + 1}")}
             @code = new_code
@@ -157,7 +158,7 @@ class Game
         self.print_board
         @guess_number += 1
         if @guess_number > 11
-            puts "Oh no, you're out of guesses! The code was #{guess.join}"
+            puts "Oh no, you're out of guesses! The code was #{@code.join}"
             self.role?("cm").score += 1
             self.announce_scores(self.role?("cm"))
             self.reset_game
@@ -185,11 +186,20 @@ class Game
             @player1.role = old_p2
             @player2.role = old_p1
             @guess_number = 0
+            @players.each do |player|
+                if player.name == "CPU" && player.role == "cb"
+                    player.reset
+                end
+            end
             self.new_board
             self.set_code
-            # TODO: call the computer's reset function to put it back to defaults - including all hints
-
         else
+            puts "The final score is #{self.role?("cb").name}: #{self.role?("cb").score} - #{self.role?("cm").name}: #{self.role?("cm").score}"
+            if self.role?("cm").score > self.role?("cb").score
+                puts "Congratulations #{self.role?("cm").name}, you're the champion!!!"
+            else
+                puts "Congratulations #{self.role?("cb").name}, you're the champion!!!"
+            end
             exit(0)
         end
     end
@@ -213,7 +223,7 @@ class Computer
     attr_accessor :role, :name, :score
     
     def computer_guess
-        if @parent.guess_number == 0 # FIXME: @parent becomes a nil for some reason on 2nd game?
+        if @parent.guess_number == 0
             @last_guess = %w[1 1 2 2]
             %w[1 1 2 2]
         else
@@ -229,28 +239,35 @@ class Computer
         end
     end
 
+    def reset
+        self.generate_hints
+        @possible_answers = @@ALL_GUESSES.clone
+        @previous_guesses = [%w[1 1 2 2]]
+    end
+
     private
 
-    attr_accessor :all_guesses, :last_guess, :parent, :previous_guesses
+    attr_accessor :ALL_GUESSES, :last_guess, :previous_guesses, :parent, :all_hints
 
-    def initialize(role, parent)
+    def initialize(role, parent, possible_codes)
         @name = "CPU"
         @role = role
         @score = 0
-        if @role == "cb"
-            # store all possible codes/guesses in an array
-            @all_guesses = Array.new
-            digits = %w[1 2 3 4 5 6]
-            digits.repeated_permutation(4) {|permutation| @all_guesses.push(permutation)}
-            # store all possible scores for each guess/code combination in a hash
-            @all_hints = Hash.new {|h, k| h[k] = {}}
-            @all_guesses.product(@all_guesses) do |guess, answer|
-                @all_hints[guess][answer] = self.get_hint(guess, answer)
-            end
-            # necessary later
-            @possible_answers = @all_guesses.clone
-            @parent = parent
-            @previous_guesses = [%w[1 1 2 2]]
+        @parent = parent
+        # store all possible codes/guesses in an array
+        @@ALL_GUESSES = possible_codes
+        # store all possible scores for each guess/code combination in a hash
+        @all_hints = Hash.new {|h, k| h[k] = {}}
+        self.generate_hints
+        # necessary later
+        @possible_answers = @@ALL_GUESSES.clone
+        @previous_guesses = [%w[1 1 2 2]]
+    end
+
+    def generate_hints
+        @all_hints.clear
+        @@ALL_GUESSES.product(@@ALL_GUESSES) do |guess, answer|
+            @all_hints[guess][answer] = self.get_hint(guess, answer)
         end
     end
 
@@ -268,7 +285,7 @@ class Computer
         hint
     end
 
-    def maximin
+    def maximin # FIXME: this runs out of memory?? sometimes and causes the program to hang
         guesses_by_min_score = Array.new
         # retain only valid codes for increased speed
         @all_hints.each do |guess, scores_by_code|
@@ -281,7 +298,7 @@ class Computer
             scores_by_code.each do |code, hint|
                 score = 0
                 @possible_answers.each do |answer|
-                    unless @all_hints[guess][answer] == hint
+                    if @all_hints[guess][answer] != hint
                         score += 1
                     end
                 end
