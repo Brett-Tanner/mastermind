@@ -142,13 +142,13 @@ class Game
     def give_hint (guess)
         guess.each_index do |column|
             if guess[column] == @code[column]
-                puts "Digit #{column + 1} is exactly right!"
+                puts "#{guess[column]} is exactly right!"
                 @board[@guess_number][column] = "b"
             elsif guess.any?(@code[column])
-                puts "Digit #{column + 1} is right, but in the wrong place!"
+                puts "#{guess[column]} is right, but in the wrong place!"
                 @board[@guess_number][column] = "w"
             else
-                puts "Digit #{column + 1} isn't part of the code"
+                puts "#{guess[column]} isn't part of the code"
             end
             @board[@guess_number][column + 5] = guess[column]
         end
@@ -157,6 +157,8 @@ class Game
     def end_round
         self.print_board
         @guess_number += 1
+        # so you can actually follow when the computer is guessing
+        sleep(4)
         if @guess_number > 11
             puts "Oh no, you're out of guesses! The code was #{@code.join}"
             self.role?("cm").score += 1
