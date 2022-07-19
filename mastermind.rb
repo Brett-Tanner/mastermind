@@ -3,8 +3,6 @@ class Game
     attr_accessor :board, :guess_number
 
     private
-
-    attr_accessor :player1, :player2, :num_of_games, :players, :code
     
     def initialize
         # create computer info to save time if 2 computer players
@@ -179,9 +177,9 @@ class Game
         if @num_of_games > 1 # because you play one initially
             @num_of_games -= 1
             if @num_of_games == 1
-                puts "#{num_of_games} game remaining!"
+                puts "#{@num_of_games} game remaining!"
             else
-                puts "#{num_of_games} games remaining!"
+                puts "#{@num_of_games} games remaining!"
             end
             # switch roles
             old_p1 = @player1.role
@@ -250,8 +248,6 @@ class Computer
 
     private
 
-    attr_accessor :ALL_GUESSES, :last_guess, :previous_guesses, :parent, :all_hints
-
     def initialize(role, parent, possible_codes)
         @name = "CPU"
         @role = role
@@ -288,7 +284,7 @@ class Computer
         hint
     end
 
-    def maximin # FIXME: this runs out of memory?? sometimes and causes the program to hang
+    def maximin # FIXME: this can take a verrryyyy long time, maybe come back and optimize at some point
         guesses_by_min_score = Array.new
         # retain only valid codes for increased speed
         @all_hints.each do |guess, scores_by_code|
